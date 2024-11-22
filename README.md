@@ -65,6 +65,7 @@ export const catalogOptions: VendureConfig["catalogOptions"] = {
 **4.** Create a new `.env` file in the root of the project and add the following variables:
 ```env
 NEXT_PUBLIC_HOST="http://localhost:3000/shop-api".
+NEXT_PUBLIC_PRIVY_APP_ID=your-privy-app-id
 ```
 **5.** Run the project locally using ```npm run dev```.
 
@@ -76,6 +77,10 @@ NEXT_PUBLIC_HOST="http://localhost:3000/shop-api".
 We use GraphQL Zeus to provide selectors for GraphQL queries and mutations. You can think of selectors as fragments in GraphQL, just with the added type-safety.
 
 <br />
+
+## &nbsp;&nbsp;Privy
+
+[Privy](https://docs.privy.io/) based authentication has been implemented. If you don't have a privy account(and app), you can [create one](https://dashboard.privy.io/) and then you can go ahead and set your app-id [in here](./src/pages/_app.page.tsx#23)
 
 ## <span><img src="https://github.com/user-attachments/assets/8140d8d8-7c6b-4da8-8afd-90a38ec278db" width=24px></span>&nbsp;&nbsp;Page Naming Conventions
 
