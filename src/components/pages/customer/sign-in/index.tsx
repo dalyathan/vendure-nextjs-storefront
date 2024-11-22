@@ -85,7 +85,8 @@ export const SignInPage: React.FC<InferGetServerSidePropsType<typeof getServerSi
 
     const {login} = useLogin({
         onComplete: async () => {
-            const privyIdToken= document.cookie.split(';')?.[0].split('=')?.[1]
+            const entries= document.cookie.split(';');
+            const privyIdToken= entries.find((substring)=> substring.trim().startsWith('privy-id-token'))?.split('=')?.[1]
             if(!privyIdToken || privyIdToken === ""){
                 return
             }
