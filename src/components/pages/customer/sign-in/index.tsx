@@ -19,6 +19,8 @@ import { Absolute, Form, FormContainer, FormContent, FormWrapper } from '../comp
 import { getServerSideProps } from './props';
 import { useChannels } from '@/src/state/channels';
 import styled from '@emotion/styled';
+import {usePrivy, useLogin} from '@privy-io/react-auth';
+
 
 export const SignInPage: React.FC<InferGetServerSidePropsType<typeof getServerSideProps>> = props => {
     const ctx = useChannels();
@@ -42,6 +44,8 @@ export const SignInPage: React.FC<InferGetServerSidePropsType<typeof getServerSi
         resolver: zodResolver(schema),
     });
     const push = usePush();
+    const {ready, authenticated,user} = usePrivy();
+    const disableLogin = !ready || (ready && authenticated);
     const onSubmit: SubmitHandler<LoginCustomerInputType> = async data => {
         const { emailAddress, password, rememberMe } = data;
         try {
@@ -79,6 +83,52 @@ export const SignInPage: React.FC<InferGetServerSidePropsType<typeof getServerSi
         }
     };
 
+    const {login} = useLogin({
+        onComplete: async () => {
+            const entries= document.cookie.split(';');
+            const privyIdToken= entries.find((substring)=> substring.trim().startsWith('privy-id-token'))?.split('=')?.[1]
+            if(!privyIdToken || privyIdToken === ""){
+                return
+            }
+            try {
+                const { authenticate } = await storefrontApiMutation(ctx)({
+                    authenticate: [
+                        { 
+                            input:{
+                                privy:{privyIdToken}
+                            } 
+                        },
+                        {
+                            __typename: true,
+                            '...on CurrentUser': { id: true },
+                            '...on InvalidCredentialsError': {
+                                errorCode: true,
+                                message: true,
+                            },
+                            '...on NotVerifiedError': {
+                                errorCode: true,
+                                message: true,
+                            },
+                        },
+                    ],
+                });
+
+                if (authenticate.__typename === 'CurrentUser') {
+                    await fetchActiveOrder();
+                    push('/customer/manage');
+                    return;
+                }
+
+                setError('root', { message: tErrors(`errors.backend.${authenticate.errorCode}`) });
+            } catch {
+                setError('root', { message: tErrors('errors.backend.UNKNOWN_ERROR') });
+            }
+        },
+        onError: (error) => {
+            setError('root', { message: tErrors('errors.backend.UNKNOWN_ERROR') });
+        },
+      });
+
     return (
         <Layout categories={props.collections} navigation={props.navigation} pageTitle={t('signInTitle')}>
             <ContentContainer>
@@ -105,6 +155,9 @@ export const SignInPage: React.FC<InferGetServerSidePropsType<typeof getServerSi
                                 <CheckBox label={t('rememberMe')} {...register('rememberMe')} />
                                 <Button loading={isSubmitting} type="submit">
                                     {t('signIn')}
+                                </Button>
+                                <Button disabled={disableLogin} onClick={login}>
+                                    {t('signInPrivy')}
                                 </Button>
                             </Form>
                             <Stack column itemsCenter gap="0.5rem">
